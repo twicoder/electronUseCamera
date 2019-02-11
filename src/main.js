@@ -1,6 +1,8 @@
 const electron = require('electron')
 
-const { app, BrowserWindow } = electron
+const images = require('./images')
+
+const { app, BrowserWindow, ipcMain: ipc } = electron
 
 let mainWindow = null
 
@@ -15,7 +17,25 @@ app.on('ready', _ => {
 
     mainWindow.webContents.openDevTools()
     
+    images.mkdir(images.getPicturesDir(app))
+
     mainWindow.on('closed', _ => {
         mainWindow = null
     })
+})
+
+ipc.on('image-captured', (evt, contents) => {
+    images.save(images.getPicturesDir(app), contents, (err, imgPath) => {
+        images.cache(imgPath)
+    })
+})
+
+ipc.on('image-remove', (evt, index) => {
+    images.rm(index, _ => {
+        evt.sender.send('image-removed', index)
+    })
+})
+
+ipc.on('image-removed', (evt, index) => {
+    document.getElementById('photos').removeChild(Array.from(document.querySelectorAll('.photo')))
 })

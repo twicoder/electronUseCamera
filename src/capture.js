@@ -1,7 +1,13 @@
+const electron = require('electron')
+
 navigator.getUserMedia = navigator.webkitGetUserMedia
 
 const video = require('./video')
 const countdown = require('./countdown')
+
+const { ipcRenderer: ipc, shell, remote } = electron
+
+const images = remote.require('./images')
 
 function formatImgTag(doc, bytes) {
     const div = doc.createElement('div')
@@ -31,7 +37,24 @@ window.addEventListener('DOMContentLoaded', _ => {
     recordEl.addEventListener('click', _ => {
         countdown.start(counterEl, 3, _ => {
             const bytes = video.captureBytes(videoEl, ctx, canvasEl)
+            ipc.send('image-captured', bytes)
             photosEl.appendChild(formatImgTag(document, bytes))
         })
+    })
+
+    photosEl.addEventListener('click', evt => {
+        const isRm = evt.target.classList.contains('photoClose')
+        const selector = isRm ? '.photoClose' : '.photoImg'
+
+        const photos = Array.from(document.querySelectorAll(selector))
+        const index = photos.findIndex(el => el == evt.target)
+
+        if (index > -1 ) {
+            if(isRm) {
+                ipc.send('image-remove', index)
+            } else {
+                shell.showItemInFolder(images.getFromCache(index))
+            }
+        }
     })
 })
