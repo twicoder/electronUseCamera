@@ -1,6 +1,7 @@
 navigator.getUserMedia = navigator.webkitGetUserMedia
 
 const video = require('./video')
+const countdown = require('./countdown')
 
 function formatImgTag(doc, bytes) {
     const div = doc.createElement('div')
@@ -28,7 +29,9 @@ window.addEventListener('DOMContentLoaded', _ => {
     video.init(navigator, videoEl)
 
     recordEl.addEventListener('click', _ => {
-        const bytes = video.captureBytes(videoEl, ctx, canvasEl)
-        photosEl.appendChild(formatImgTag(document, bytes))
+        countdown.start(counterEl, 3, _ => {
+            const bytes = video.captureBytes(videoEl, ctx, canvasEl)
+            photosEl.appendChild(formatImgTag(document, bytes))
+        })
     })
 })
