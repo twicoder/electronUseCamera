@@ -2,6 +2,8 @@ const electron = require('electron')
 
 navigator.getUserMedia = navigator.webkitGetUserMedia
 
+const effects = require('./effects')
+
 const video = require('./video')
 const countdown = require('./countdown')
 const flash = require('./flash')
@@ -9,6 +11,10 @@ const flash = require('./flash')
 const { ipcRenderer: ipc, shell, remote } = electron
 
 const images = remote.require('./images')
+
+let canvasTarget
+let seriously
+let videoSrc
 
 function formatImgTag(doc, bytes) {
     const div = doc.createElement('div')
@@ -32,14 +38,20 @@ window.addEventListener('DOMContentLoaded', _ => {
     const counterEl = document.getElementById('counter')
     const flashEl = document.getElementById('flash')
     
-    const ctx = canvasEl.getContext('2d')
+    // const ctx = canvasEl.getContext('2d')
+
+    seriously = new Seriously()
+    videoSrc = seriously.source('#video')
+    canvasTarget = seriously.target('#canvas')
+    effects.choose(seriously, videoSrc, canvasTarget, 'ascii')
 
     video.init(navigator, videoEl)
 
     recordEl.addEventListener('click', _ => {
         countdown.start(counterEl, 3, _ => {
             flash(flashEl)
-            const bytes = video.captureBytes(videoEl, ctx, canvasEl)
+            // const bytes = video.captureBytes(videoEl, ctx, canvasEl)
+            const bytes = video.captureBytesFromLiveCanvas(canvasEl)
             ipc.send('image-captured', bytes)
             photosEl.appendChild(formatImgTag(document, bytes))
         })
